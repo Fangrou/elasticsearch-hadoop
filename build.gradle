@@ -553,7 +553,7 @@ project(":elasticsearch-hadoop-hive") {
 
 // reusable method to nest Map/Reduce module in the rest of the projects to make them usable stand-alone
 def baseSparkProject(target, sparkVersion) {
-   def scalaVer = project.hasProperty("scala") ? project.getProperty("scala") : "210"
+   def scalaVer = project.hasProperty("scala") ? project.getProperty("scala") : "211"
 
     switch (scalaVer) {
       case "211":
@@ -562,14 +562,14 @@ def baseSparkProject(target, sparkVersion) {
         break;
 
       default:
-        ext.scalaVersion = scala210Version
-        ext.scalaMajorVersion = scala210MajorVersion
+        ext.scalaVersion = scala211Version
+        ext.scalaMajorVersion = scala211MajorVersion
     }
-    
+
     target.archivesBaseName += "_$scalaMajorVersion"
 
     target.apply plugin: 'scala'
-    
+
     target.compileScala {
         configure(scalaCompileOptions.forkOptions) {
             memoryMaximumSize = '1g'
@@ -580,12 +580,12 @@ def baseSparkProject(target, sparkVersion) {
         sourceCompatibility = 1.6
         targetCompatibility = 1.6
     }
-    
+
     println "Using Scala $scalaMajorVersion [$scalaVersion]"
 
     // when using Scala 2.11 use a different folder to cache the artifacts between builds
     if (scalaVer == "211") {
-      target.sourceSets.each { 
+      target.sourceSets.each {
         it.output.classesDir = file(it.output.classesDir.absolutePath.replaceAll("classes", "classes.211"))
       }
       target.javadoc {
@@ -596,9 +596,9 @@ def baseSparkProject(target, sparkVersion) {
         testClassesDir = target.sourceSets.itest.output.classesDir
       }
     }
-    
+
     def coreSrc = file("$target.projectDir/../core").absolutePath.replace('\\','/')
-    
+
     target.sourceSets {
         main.scala.srcDirs += "$coreSrc/main/scala"
         test.scala.srcDirs += "$coreSrc/test/scala"
@@ -607,28 +607,28 @@ def baseSparkProject(target, sparkVersion) {
         itest.resources.srcDirs += "$coreSrc/itest/resources"
     }
 
-    
+
     // currently the outside project folders are transformed into linked resources however
     // Gradle only supports one so the project will be invalid as not all sources will be in there
     // as such, they are setup here manually for Eclipse. IntelliJ probably needs a similar approach
     target.eclipse {
         project.file.whenMerged { pj ->
             // eliminated resources created by gradle
-            
+
             linkedResources.clear()
             linkedResources.add(new org.gradle.plugins.ide.eclipse.model.Link("core/main/scala", "2", "$coreSrc/main/scala", null))
             linkedResources.add(new org.gradle.plugins.ide.eclipse.model.Link("core/test/scala", "2", "$coreSrc/test/scala", null))
             linkedResources.add(new org.gradle.plugins.ide.eclipse.model.Link("core/itest/java", "2", "$coreSrc/itest/java", null))
             linkedResources.add(new org.gradle.plugins.ide.eclipse.model.Link("core/itest/scala", "2", "$coreSrc/itest/scala", null))
             linkedResources.add(new org.gradle.plugins.ide.eclipse.model.Link("core/itest/resources","2", "$coreSrc/itest/resources", null))
-            
+
         }
         classpath.file {
             whenMerged { cp ->
                 entries.removeAll { entry ->
                     entry.kind == 'src' && (entry.path in ["scala", "java", "resources"] || entry.path.startsWith("itest-") || entry.path.endsWith("-scala"))
                 }
-                
+
                 entries.add(new org.gradle.plugins.ide.eclipse.model.SourceFolder("core/main/scala", null))
                 entries.add(new org.gradle.plugins.ide.eclipse.model.SourceFolder("core/test/scala", null))
                 entries.add(new org.gradle.plugins.ide.eclipse.model.SourceFolder("core/itest/java", null))
@@ -637,34 +637,34 @@ def baseSparkProject(target, sparkVersion) {
             }
         }
     }
-    
+
     target.dependencies {
         provided("org.apache.spark:spark-core_$scalaMajorVersion:$sparkVersion") {
             exclude group: 'javax.servlet'
             exclude group: 'org.apache.hadoop'
         }
-        
+
         optional("org.apache.spark:spark-sql_$scalaMajorVersion:$sparkVersion") {
             exclude group: 'org.apache.hadoop'
         }
-        
+
         compile("org.scala-lang:scala-library:$scalaVersion")
 
         itestCompile("org.apache.spark:spark-sql_$scalaMajorVersion:$sparkVersion") {
             exclude group: 'org.apache.hadoop'
         }
     }
-    
+
     nestMRProject(target)
-    
-    
+
+
     // disable jacoco as it will fail
     test {
       jacoco {
         enabled = false
       }
     }
-    
+
     target.scaladoc {
         title = "${rootProject.description} ${version} API"
     }

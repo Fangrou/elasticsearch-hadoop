@@ -59,7 +59,7 @@ public abstract class Version {
             }
 
             int foundJars = 0;
-            if (normalized.size() > 1) {
+            if (normalized.size() > 2) {
                 StringBuilder sb = new StringBuilder("Multiple ES-Hadoop versions detected in the classpath; please use only one\n");
                 for (String s : normalized) {
                     if (s.contains("jar:")) {
@@ -68,9 +68,9 @@ public abstract class Version {
                         sb.append("\n");
                     }
                 }
-                if (foundJars > 1) {
+                if (foundJars > 2) {
                     LogFactory.getLog(Version.class).fatal(sb);
-                    throw new Error(sb.toString());
+                    throw new Error(sb.toString() + "found " + foundJars + "jars\n");
                 }
             }
         }
